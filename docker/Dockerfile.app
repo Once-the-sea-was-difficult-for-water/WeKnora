@@ -22,6 +22,7 @@ RUN if [ -n "$APK_MIRROR_ARG" ]; then \
     apt-get install -y git build-essential libsqlite3-dev
 
 # Install migrate tool
+ENV GOPROXY=https://goproxy.cn,direct
 RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
 # Copy go mod and sum files

@@ -32,8 +32,19 @@
                         <span class="doc-group-title" :title="group.title">{{ group.title }}</span>
                         <span class="doc-group-count">{{ $t('chat.referenceChunkCount', { count: group.chunks.length }) }}</span>
                     </div>
-                    <div class="doc-group-actions" v-if="group.knowledgeBaseId" @click.stop>
-                        <t-tooltip :content="$t('chat.navigateToDocument')">
+                    <div class="doc-group-actions" v-if="group.sourceUrl || group.knowledgeBaseId" @click.stop>
+                        <t-tooltip v-if="group.sourceUrl" :content="$t('chat.openSourceLink')">
+                            <a
+                                :href="group.sourceUrl"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="doc-group-navigate"
+                                @click.stop
+                            >
+                                <t-icon name="link" size="14px" />
+                            </a>
+                        </t-tooltip>
+                        <t-tooltip v-if="group.knowledgeBaseId" :content="$t('chat.navigateToDocument')">
                             <span class="doc-group-navigate" @click="navigateToDocument(group)">
                                 <t-icon name="jump" size="14px" />
                             </span>
@@ -112,6 +123,12 @@ const groupedKnowledgeRefs = computed(() => {
                 title: item.knowledge_title || item.knowledge_filename || key,
                 knowledgeId: item.knowledge_id,
                 knowledgeBaseId: item.knowledge_base_id,
+                // sourceUrl is the original document link in the external
+                // system (Yuque / Feishu / Notion), persisted into
+                // Knowledge.Metadata["url"] at sync time and surfaced here so
+                // users can jump straight to the source instead of only the
+                // indexed snippet. Empty for manually-uploaded files.
+                sourceUrl: getSourceUrl(item),
                 chunks: [],
             });
         }
@@ -156,6 +173,18 @@ const navigateToDocument = (group) => {
         path: `/platform/knowledge-bases/${group.knowledgeBaseId}`,
         query
     });
+};
+
+// getSourceUrl returns the external source document URL (Yuque / Feishu /
+// Notion) carried in the reference's metadata, or '' when absent (e.g. a
+// manually-uploaded file). Only http(s) links are accepted so a malformed
+// metadata value can't produce a broken/unsafe anchor.
+const getSourceUrl = (item) => {
+    const url = item?.metadata?.url;
+    if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
+        return url;
+    }
+    return '';
 };
 
 const getWebSearchUrl = (item) => {

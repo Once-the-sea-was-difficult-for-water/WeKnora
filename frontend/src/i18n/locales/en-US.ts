@@ -2264,6 +2264,7 @@ export default {
     channelIm: 'IM',
     chunkLabel: 'Chunk {index}:',
     navigateToDocument: 'View document details',
+    openSourceLink: 'Open original link',
     referenceIconAlt: 'Reference materials icon',
     chunkIdLabel: 'Chunk ID:',
     documentIdLabel: 'Document ID:',

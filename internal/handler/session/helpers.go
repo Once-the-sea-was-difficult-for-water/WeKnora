@@ -112,22 +112,28 @@ func buildStreamResponse(evt interfaces.StreamEvent, requestID string) *types.St
 			for _, ref := range refs {
 				if refMap, ok := ref.(map[string]interface{}); ok {
 					sr := &types.SearchResult{
-						ID:                getString(refMap, "id"),
-						Content:           getString(refMap, "content"),
-						KnowledgeID:       getString(refMap, "knowledge_id"),
-						ChunkIndex:        int(getFloat64(refMap, "chunk_index")),
-						KnowledgeTitle:    getString(refMap, "knowledge_title"),
-						StartAt:           int(getFloat64(refMap, "start_at")),
-						EndAt:             int(getFloat64(refMap, "end_at")),
-						Seq:               int(getFloat64(refMap, "seq")),
-						Score:             getFloat64(refMap, "score"),
-						ChunkType:         getString(refMap, "chunk_type"),
-						ParentChunkID:     getString(refMap, "parent_chunk_id"),
-						ImageInfo:         getString(refMap, "image_info"),
+						ID:                   getString(refMap, "id"),
+						Content:              getString(refMap, "content"),
+						KnowledgeID:          getString(refMap, "knowledge_id"),
+						ChunkIndex:           int(getFloat64(refMap, "chunk_index")),
+						KnowledgeTitle:       getString(refMap, "knowledge_title"),
+						StartAt:              int(getFloat64(refMap, "start_at")),
+						EndAt:                int(getFloat64(refMap, "end_at")),
+						Seq:                  int(getFloat64(refMap, "seq")),
+						Score:                getFloat64(refMap, "score"),
+						ChunkType:            getString(refMap, "chunk_type"),
+						ParentChunkID:        getString(refMap, "parent_chunk_id"),
+						ImageInfo:            getString(refMap, "image_info"),
 						KnowledgeFilename:    getString(refMap, "knowledge_filename"),
 						KnowledgeSource:      getString(refMap, "knowledge_source"),
+						KnowledgeChannel:     getString(refMap, "knowledge_channel"),
 						KnowledgeDescription: getString(refMap, "knowledge_description"),
 						KnowledgeBaseID:      getString(refMap, "knowledge_base_id"),
+						// Metadata carries the source document URL (added by
+						// DataSourceService.ingestItem) so reference cards can
+						// render a clickable link back to Yuque / Feishu / Notion.
+						// Preserve it across the Redis serialize/deserialize round-trip.
+						Metadata: getStringMap(refMap, "metadata"),
 					}
 					searchResults = append(searchResults, sr)
 				}
@@ -141,9 +147,10 @@ func buildStreamResponse(evt interfaces.StreamEvent, requestID string) *types.St
 
 // sendCompletionEvent sends a final completion event to the client
 // NOTE: This is now a no-op because:
-// 1. The 'complete' event from handleComplete already signals stream completion
-// 2. Sending an extra empty 'answer' event with done:true causes frontend issues
-//    (multiple done events can confuse state management)
+//  1. The 'complete' event from handleComplete already signals stream completion
+//  2. Sending an extra empty 'answer' event with done:true causes frontend issues
+//     (multiple done events can confuse state management)
+//
 // The frontend should use 'complete' response_type to detect stream completion
 func sendCompletionEvent(c *gin.Context, requestID string) {
 	// Intentionally empty - completion is signaled by the 'complete' event
@@ -261,10 +268,29 @@ func getFloat64(m map[string]interface{}, key string) float64 {
 	return 0.0
 }
 
+// getStringMap extracts a map[string]string from a deserialized JSON object.
+// After a Redis serialize/deserialize round-trip a Go map[string]string
+// surfaces as map[string]interface{} with string values, so coerce each
+// value back to string. Returns nil when the key is absent or not an object.
+func getStringMap(m map[string]interface{}, key string) map[string]string {
+	raw, ok := m[key].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	out := make(map[string]string, len(raw))
+	for k, v := range raw {
+		if s, ok := v.(string); ok {
+			out[k] = s
+		} else {
+			out[k] = fmt.Sprintf("%v", v)
+		}
+	}
+	return out
+}
+
 // createDefaultSummaryConfig and fillSummaryConfigDefaults used to build
 // per-session SummaryConfig from tenant-level ConversationConfig + config.yaml
 // defaults. Both helpers became unreachable when the chat pipeline moved to
 // CustomAgent (builtin-quick-answer / smart-reasoning) and the tenant-level
 // ConversationConfig field was removed; deleting them avoids the only
 // remaining references to that defunct path.
-

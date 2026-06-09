@@ -763,6 +763,21 @@ func (s *DataSourceService) ingestItem(ctx context.Context, ds *types.DataSource
 	for k, v := range item.Metadata {
 		metadata[k] = v
 	}
+	// Persist the original document URL so downstream consumers (e.g. the
+	// quick-chat reference cards) can render a clickable source link back to
+	// the external system (Yuque / Feishu / Notion) instead of only showing
+	// the indexed Markdown snippet. Every connector populates FetchedItem.URL
+	// with the canonical document URL, but the content-import path below
+	// (CreateKnowledgeFromFile) only consumes Content + metadata and would
+	// otherwise drop it. Set it here so the URL lands in Knowledge.Metadata
+	// and flows through SearchResult.Metadata to the frontend.
+	//
+	// Do not overwrite a url already provided by the connector's own metadata.
+	if item.URL != "" {
+		if _, ok := metadata["url"]; !ok {
+			metadata["url"] = item.URL
+		}
+	}
 
 	// Check if a knowledge item with this external_id already exists → delete it first (update)
 	isUpdate := false

@@ -437,6 +437,7 @@ export default {
     channelIm: "IM",
     chunkLabel: "청크 {index}:",
     navigateToDocument: "문서 상세 보기",
+    openSourceLink: "원본 링크 열기",
     referenceIconAlt: "참조 내용 아이콘",
     chunkIdLabel: "청크 ID:",
     documentIdLabel: "문서 ID:",

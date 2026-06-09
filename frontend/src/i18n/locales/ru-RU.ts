@@ -2666,6 +2666,7 @@ export default {
     channelIm: 'IM',
     chunkLabel: 'Фрагмент {index}:',
     navigateToDocument: 'Просмотр документа',
+    openSourceLink: 'Открыть оригинал',
     referenceIconAlt: 'Иконка ссылок на материалы',
     chunkIdLabel: 'ID фрагмента:',
     documentIdLabel: 'ID документа:',

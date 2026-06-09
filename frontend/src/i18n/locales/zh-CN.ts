@@ -434,6 +434,7 @@ export default {
     channelIm: "IM",
     chunkLabel: "片段{index}:",
     navigateToDocument: "查看文档详情",
+    openSourceLink: "打开原文链接",
     referenceIconAlt: "参考内容图标",
     chunkIdLabel: "片段ID:",
     documentIdLabel: "文档ID:",
